@@ -1,3 +1,9 @@
+### [2026-10-13 23:59] Xóa dữ liệu mẫu cũ (Schedules, Departments, Holidays, Notifications) của HLHPN
+- **Mô tả**: Đã tạo bản sao lưu DB trước khi xử lý (`documents.db.bak_...`). Xóa toàn bộ 398 lịch công tác cũ, phòng ban, thông báo và ngày lễ thừa từ bản clone UBND trên database độc lập của Hội Liên Hiệp Phụ Nữ (`/root/lichcongtac-hlhpn/data_dump/documents.db`), reset sequence về 1 và VACUUM. Giữ nguyên tài khoản quản trị Admin.
+- **Tệp thay đổi**:
+  - `COMMIT_LOG.md` (Sửa đổi)
+- **Lệnh git commit**: `git commit -m "chore(db): xóa dữ liệu mẫu cũ trên database hội liên hiệp phụ nữ"`
+
 ### [2026-10-13 23:52] Cấu hình chạy tên miền riêng lienhiepphunu.vpdtcampha.vn tại root /
 - **Mô tả**: Thiết lập ứng dụng chạy độc lập trên tên miền mới `lienhiepphunu.vpdtcampha.vn` (DNS trỏ về 14.225.172.225). Chuyển Vite base path và React Router về root `/` (hỗ trợ song song cả `/` và `/phunu/`), cập nhật meta SEO/canonical, cập nhật đường dẫn điều hướng Navbar và cấu hình Nginx riêng `lienhiepphunu.conf` với chứng chỉ SSL wildcard.
 - **Tệp thay đổi**:
