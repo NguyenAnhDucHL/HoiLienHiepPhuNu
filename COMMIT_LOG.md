@@ -1,3 +1,10 @@
+### [2026-10-13 23:32] Cập nhật cấu hình CI/CD GitHub Actions và màu navbar Admin cho Hội Liên Hiệp Phụ Nữ
+- **Mô tả**: Đồng bộ cấu hình triển khai tự động CI/CD cho dự án Hội Liên Hiệp Phụ Nữ: sửa Docker image tag thành `ghcr.io/nguyenanhduchl/lichcongtac-hlhpn:latest` và thư mục triển khai máy chủ thành `/root/lichcongtac-hlhpn` để tránh xung đột với bản UBND đang chạy trên cùng server. Cập nhật màu nền thanh menu AdminHeader sang tím `#7b1fa2`.
+- **Tệp thay đổi**:
+  - `.github/workflows/deploy.yml` (Sửa đổi — đổi image tag và thư mục server)
+  - `LichCongTac.Api/ClientApp/src/components/AdminHeader.jsx` (Sửa đổi — đổi màu navbar sang tím)
+- **Lệnh git commit**: `git commit -m "chore(infra): cập nhật workflow deploy và màu admin navbar cho hlhpn"`
+
 ### [2026-10-03 20:52] Cấu hình Github Actions dùng SSH Key thay vì Password
 - **Mô tả**: Máy chủ VNPT (`14.225.172.225`) cấu hình `PermitRootLogin prohibit-password` dẫn đến việc Github Actions (`appleboy/scp-action`) bị lỗi xác thực SSH (chỉ hỗ trợ Key, từ chối Password). Đã thay đổi `deploy.yml` để sử dụng `key` thay vì `password` (`secrets.VNPT_KEY` thay vì `secrets.VNPT_PASS`). Cập nhật `appleboy/scp-action` và `ssh-action` lên tag `@master` để hỗ trợ chuẩn OpenSSH mới nhất. Đã khởi tạo và đưa một SSH Key mới (`github-actions-deploy`) vào server.
 - **Tệp thay đổi**:

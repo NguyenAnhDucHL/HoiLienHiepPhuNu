@@ -81,7 +81,7 @@ export default function AdminHeader() {
       </div>
 
       {/* Navigation */}
-      <nav className="bg-[#5bc0de] relative z-50">
+      <nav className="bg-[#7b1fa2] relative z-50">
         <div className="max-w-[1000px] mx-auto flex flex-col md:flex-row md:items-center">
           {/* Mobile Menu Toggle */}
           <div
@@ -125,7 +125,7 @@ export default function AdminHeader() {
                           key={sidx}
                           to={sub.href}
                           onClick={() => setIsMobileMenuOpen(false)}
-                          className={`block px-8 py-3 md:px-4 md:py-2 border-b border-[#2a9bba] md:border-none md:border-t md:border-gray-100 hover:bg-[#2a9bba] md:hover:bg-[#5bc0de] hover:text-white transition-colors ${isActive(sub.href) ? 'bg-[#2a9bba] md:bg-[#5bc0de] text-white font-bold' : 'text-white md:text-gray-800'}`}
+                          className={`block px-8 py-3 md:px-4 md:py-2 border-b border-[#2a9bba] md:border-none md:border-t md:border-gray-100 hover:bg-[#2a9bba] md:hover:bg-[#7b1fa2] hover:text-white transition-colors ${isActive(sub.href) ? 'bg-[#2a9bba] md:bg-[#7b1fa2] text-white font-bold' : 'text-white md:text-gray-800'}`}
                         >
                           {sub.label}
                         </Link>
