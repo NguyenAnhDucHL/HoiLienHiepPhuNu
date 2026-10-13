@@ -1,0 +1,459 @@
+using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Configuration;
+using LichCongTac.Core.Data.Interfaces;
+using LichCongTac.Models;
+using System.Threading.Tasks;
+
+namespace LichCongTac.Core.Data.Repositories
+{
+    public class UserRepository : IUserRepository
+    {
+        private readonly string _connectionString;
+
+        public UserRepository(IConfiguration configuration)
+        {
+            // Lấy từ appsettings.json (ưu tiên cao nhất)
+            string? configConnString = configuration.GetConnectionString("DefaultConnection");
+
+            if (!string.IsNullOrEmpty(configConnString))
+            {
+                _connectionString = configConnString;
+            }
+            else
+            {
+                // Fallback về logic cũ để không làm mất dữ liệu hiện tại nếu chưa cấu hình appsettings.json
+                string dbPath;
+                string? envPath = Environment.GetEnvironmentVariable("DB_PATH");
+
+                if (!string.IsNullOrEmpty(envPath))
+                {
+                    dbPath = envPath;
+                }
+                else
+                {
+                    string appData = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "LichCongTac"
+                    );
+                    dbPath = Path.Combine(appData, "documents.db");
+                }
+                _connectionString = $"Data Source={dbPath};Pooling=True;Default Timeout=30";
+            }
+        }
+
+        // Helper: Map một SqliteDataReader row → User object (kể cả các cột Identity mới)
+        private static User MapUser(SqliteDataReader reader, bool includeSensitive = false)
+        {
+            var user = new User
+            {
+                Id           = Convert.ToInt32(reader["Id"]),
+                Username     = reader["Username"]?.ToString() ?? "",
+                FullName     = reader["FullName"]?.ToString() ?? "",
+                Email        = reader["Email"]?.ToString() ?? "",
+                PhoneNumber  = reader["PhoneNumber"]?.ToString() ?? "",
+                Role         = reader["Role"]?.ToString() ?? "Guest",
+                DepartmentId = reader["DepartmentId"] == DBNull.Value ? null : Convert.ToInt32(reader["DepartmentId"]),
+                DepartmentName = HasColumn(reader, "DepartmentName") ? reader["DepartmentName"]?.ToString() : null,
+                SessionId    = reader["SessionId"]?.ToString(),
+                CreatedAt    = reader["CreatedAt"] != DBNull.Value && DateTime.TryParse(reader["CreatedAt"]?.ToString(), out DateTime dt) ? dt : DateTime.UtcNow,
+
+                // --- Account Lockout cũ ---
+                FailedLoginCount = reader["FailedLoginCount"] == DBNull.Value ? 0 : Convert.ToInt32(reader["FailedLoginCount"]),
+                LockoutUntil     = ParseNullableDateTime(reader["LockoutUntil"]?.ToString()),
+
+                // --- New fields ---
+                ZaloId                 = HasColumn(reader, "ZaloId") ? reader["ZaloId"]?.ToString() : null,
+                NotificationPreference = HasColumn(reader, "NotificationPreference") ? reader["NotificationPreference"]?.ToString() : null,
+
+                // --- Identity columns mới — dùng HasColumn() đề phòng migration chưa chạy ---
+                SecurityStamp       = HasColumn(reader, "SecurityStamp")
+                                        ? (reader["SecurityStamp"]?.ToString() ?? Guid.NewGuid().ToString())
+                                        : Guid.NewGuid().ToString(),
+                NormalizedUserName  = HasColumn(reader, "NormalizedUserName")
+                                        ? (reader["NormalizedUserName"]?.ToString() ?? (reader["Username"]?.ToString() ?? "").ToUpperInvariant())
+                                        : (reader["Username"]?.ToString() ?? "").ToUpperInvariant(),
+                LockoutEnabled      = HasColumn(reader, "LockoutEnabled")
+                                        && reader["LockoutEnabled"] != DBNull.Value
+                                        && Convert.ToInt32(reader["LockoutEnabled"]) == 1,
+                AccessFailedCount   = HasColumn(reader, "AccessFailedCount") && reader["AccessFailedCount"] != DBNull.Value
+                                        ? Convert.ToInt32(reader["AccessFailedCount"]) : 0,
+                LockoutEnd          = HasColumn(reader, "LockoutEnd")
+                                        ? ParseNullableDateTimeOffset(reader["LockoutEnd"]?.ToString()) : null,
+                RefreshToken        = HasColumn(reader, "RefreshToken") ? reader["RefreshToken"]?.ToString() : null,
+                RefreshTokenExpiryTime = HasColumn(reader, "RefreshTokenExpiryTime") ? ParseNullableDateTime(reader["RefreshTokenExpiryTime"]?.ToString()) : null,
+            };
+
+            if (includeSensitive)
+            {
+                user.PasswordHash = reader["PasswordHash"]?.ToString() ?? "";
+            }
+
+            return user;
+        }
+
+        private static bool HasColumn(SqliteDataReader reader, string columnName)
+        {
+            for (int i = 0; i < reader.FieldCount; i++)
+                if (reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
+        }
+
+        private static DateTime? ParseNullableDateTime(string? raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return null;
+            return DateTime.TryParse(raw, out DateTime result) ? result : null;
+        }
+
+        private static DateTimeOffset? ParseNullableDateTimeOffset(string? raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return null;
+            return DateTimeOffset.TryParse(raw, out DateTimeOffset result) ? result : null;
+        }
+
+        // ─── READ ────────────────────────────────────────────────────────────────
+
+        public async Task<List<User>> GetUsersAsync()
+        {
+            var users = new List<User>();
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            string sql = @"
+                SELECT u.Id, u.Username, u.FullName, u.Email, u.PhoneNumber, u.Role,
+                       u.DepartmentId, d.Name as DepartmentName, u.SessionId, u.CreatedAt,
+                       u.FailedLoginCount, u.LockoutUntil, u.ZaloId, u.NotificationPreference,
+                       u.SecurityStamp, u.NormalizedUserName, u.LockoutEnabled, u.AccessFailedCount, u.LockoutEnd
+                FROM Users u 
+                LEFT JOIN Departments d ON u.DepartmentId = d.Id";
+            using var cmd = new SqliteCommand(sql, connection);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                users.Add(MapUser(reader));
+            return users;
+        }
+
+        public async Task<User?> GetUserByIdAsync(int id)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            string sql = @"
+                SELECT u.Id, u.Username, u.PasswordHash, u.FullName, u.Email, u.PhoneNumber, u.Role,
+                       u.DepartmentId, d.Name as DepartmentName, u.SessionId, u.CreatedAt,
+                       u.FailedLoginCount, u.LockoutUntil, u.ZaloId, u.NotificationPreference,
+                       u.SecurityStamp, u.NormalizedUserName, u.LockoutEnabled, u.AccessFailedCount, u.LockoutEnd
+                FROM Users u 
+                LEFT JOIN Departments d ON u.DepartmentId = d.Id 
+                WHERE u.Id=@id";
+            using var cmd = new SqliteCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@id", id);
+            using var reader = await cmd.ExecuteReaderAsync();
+            return await reader.ReadAsync() ? MapUser(reader, includeSensitive: true) : null;
+        }
+
+        /// <summary>
+        /// Tìm user theo username (case-insensitive qua NormalizedUserName).
+        /// Được dùng bởi CustomUserStore của Identity.
+        /// </summary>
+        public async Task<User?> GetUserByUsernameAsync(string username)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            // Tìm theo NormalizedUserName (in hoa) trước, fallback về Username thường
+            string sql = @"
+                SELECT u.Id, u.Username, u.PasswordHash, u.FullName, u.Email, u.PhoneNumber, u.Role,
+                       u.DepartmentId, u.SessionId, u.CreatedAt, u.ZaloId, u.NotificationPreference,
+                       u.FailedLoginCount, u.LockoutUntil,
+                       u.SecurityStamp, u.NormalizedUserName, u.LockoutEnabled, u.AccessFailedCount, u.LockoutEnd,
+                       u.RefreshToken, u.RefreshTokenExpiryTime
+                FROM Users u 
+                WHERE u.NormalizedUserName = @norm OR u.Username = @raw";
+            using var cmd = new SqliteCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@norm", username.ToUpperInvariant());
+            cmd.Parameters.AddWithValue("@raw", username);
+            using var reader = await cmd.ExecuteReaderAsync();
+            return await reader.ReadAsync() ? MapUser(reader, includeSensitive: true) : null;
+        }
+
+        // ─── LOGIN (giữ nguyên logic cũ, không thay đổi) ─────────────────────────
+
+        public async Task<User?> LoginAsync(string username, string password)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+
+            string sql = @"SELECT Id, Username, PasswordHash, FullName, Role, DepartmentId,
+                                  FailedLoginCount, LockoutUntil, SecurityStamp, NormalizedUserName,
+                                  LockoutEnabled, AccessFailedCount, LockoutEnd
+                           FROM Users WHERE Username=@u OR NormalizedUserName=@norm";
+            using var cmd = new SqliteCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@u", username);
+            cmd.Parameters.AddWithValue("@norm", username.ToUpperInvariant());
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (!await reader.ReadAsync()) return null;
+
+            int userId            = Convert.ToInt32(reader["Id"]);
+            string storedHash     = reader["PasswordHash"]?.ToString() ?? "";
+            string? lockoutRaw    = reader["LockoutUntil"]?.ToString();
+
+            // ── Bước 1: Kiểm tra Account Lockout ──────────────────────────────────
+            if (!string.IsNullOrEmpty(lockoutRaw) &&
+                DateTime.TryParse(lockoutRaw, out DateTime lockoutUntil) &&
+                lockoutUntil > DateTime.UtcNow)
+            {
+                return null; // Không tiết lộ lý do (chống user enumeration)
+            }
+
+            var user = new User
+            {
+                Id           = userId,
+                Username     = reader["Username"]?.ToString() ?? "",
+                FullName     = reader["FullName"]?.ToString() ?? "",
+                Role         = reader["Role"]?.ToString() ?? "Guest",
+                DepartmentId = reader["DepartmentId"] == DBNull.Value ? null : Convert.ToInt32(reader["DepartmentId"]),
+                SecurityStamp = reader["SecurityStamp"]?.ToString() ?? Guid.NewGuid().ToString(),
+            };
+            reader.Close();
+
+            // ── Bước 2: Xác minh mật khẩu (Timing-Safe) ──────────────────────────
+            bool isValid = false;
+            if (storedHash.StartsWith("$2"))
+            {
+                // BCrypt – timing-safe nội tại
+                try { isValid = BCrypt.Net.BCrypt.Verify(password, storedHash); } catch { }
+            }
+            else
+            {
+                // Mật khẩu cũ plain-text: dùng FixedTimeEquals để chống Timing Attack
+                var storedBytes = System.Text.Encoding.UTF8.GetBytes(storedHash);
+                var inputBytes  = System.Text.Encoding.UTF8.GetBytes(password);
+                var paddedInput = inputBytes.Length == storedBytes.Length
+                    ? inputBytes
+                    : System.Text.Encoding.UTF8.GetBytes(password.PadRight(storedHash.Length));
+                isValid = System.Security.Cryptography.CryptographicOperations
+                              .FixedTimeEquals(storedBytes, paddedInput);
+            }
+
+            // ── Bước 3: Xử lý kết quả xác minh ──────────────────────────────────
+            if (!isValid)
+            {
+                using var incCmd = new SqliteCommand(@"
+                    UPDATE Users SET
+                        FailedLoginCount   = COALESCE(FailedLoginCount, 0) + 1,
+                        AccessFailedCount  = COALESCE(AccessFailedCount, 0) + 1,
+                        LockoutUntil = CASE
+                            WHEN COALESCE(FailedLoginCount, 0) + 1 >= 5
+                            THEN datetime('now', '+15 minutes')
+                            ELSE LockoutUntil
+                        END,
+                        LockoutEnd = CASE
+                            WHEN COALESCE(FailedLoginCount, 0) + 1 >= 5
+                            THEN datetime('now', '+15 minutes')
+                            ELSE LockoutEnd
+                        END
+                    WHERE Id = @id", connection);
+                incCmd.Parameters.AddWithValue("@id", userId);
+                await incCmd.ExecuteNonQueryAsync();
+                return null;
+            }
+
+            // ── Bước 4: Đăng nhập thành công ─────────────────────────────────────
+            // Tự động migrate plain-text → BCrypt nếu cần
+            if (!storedHash.StartsWith("$2"))
+            {
+                var newHash = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+                using var migrateCmd = new SqliteCommand(
+                    "UPDATE Users SET PasswordHash=@h WHERE Id=@id", connection);
+                migrateCmd.Parameters.AddWithValue("@h", newHash);
+                migrateCmd.Parameters.AddWithValue("@id", userId);
+                await migrateCmd.ExecuteNonQueryAsync();
+                Console.WriteLine($"[Security] Đã migrate mật khẩu plain-text → BCrypt cho user: {user.Username}");
+            }
+
+            // Reset bộ đếm sai + tạo SessionId mới
+            user.SessionId = Guid.NewGuid().ToString();
+            using var updateCmd = new SqliteCommand(@"
+                UPDATE Users
+                SET SessionId = @s, FailedLoginCount = 0, LockoutUntil = NULL,
+                    AccessFailedCount = 0, LockoutEnd = NULL
+                WHERE Id = @id", connection);
+            updateCmd.Parameters.AddWithValue("@s",  user.SessionId);
+            updateCmd.Parameters.AddWithValue("@id", userId);
+            await updateCmd.ExecuteNonQueryAsync();
+
+            return user;
+        }
+
+        // ─── CREATE / UPDATE / DELETE ────────────────────────────────────────────
+
+        public async Task<bool> CreateUserAsync(User user)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+
+            // Hash mật khẩu nếu chưa hash (hỗ trợ cả BCrypt cũ và Identity PBKDF2 mới)
+            var passwordToStore = (user.PasswordHash?.StartsWith("$2") == true || user.PasswordHash?.StartsWith("AQAAAA") == true)
+                ? user.PasswordHash
+                : BCrypt.Net.BCrypt.HashPassword(user.PasswordHash ?? "ChangeMe@123", workFactor: 12);
+
+            // Tạo SecurityStamp ngay lúc tạo user để Identity hoạt động đúng
+            var securityStamp     = Guid.NewGuid().ToString();
+            var normalizedUserName = user.Username.ToUpperInvariant();
+
+            string sql = @"
+                INSERT INTO Users (Username, PasswordHash, FullName, Email, PhoneNumber, Role, DepartmentId, CreatedAt, SecurityStamp, NormalizedUserName, LockoutEnabled, ZaloId, NotificationPreference)
+                VALUES (@u, @p, @f, @e, @pn, @r, @d, @now, @stamp, @norm, 1, @zalo, @notif)";
+            
+            try
+            {
+                using var cmd = new SqliteCommand(sql, connection);
+                cmd.Parameters.AddWithValue("@now",   DateTime.UtcNow.AddHours(7).ToString("yyyy-MM-dd HH:mm:ss"));
+                cmd.Parameters.AddWithValue("@u",     user.Username);
+                cmd.Parameters.AddWithValue("@p",     passwordToStore);
+                cmd.Parameters.AddWithValue("@f",     (object?)user.FullName ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@e",     (object?)user.Email ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@pn",    (object?)user.PhoneNumber ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@r",     (object?)user.Role ?? "Guest");
+                cmd.Parameters.AddWithValue("@d",     (object?)user.DepartmentId ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@stamp", securityStamp);
+                cmd.Parameters.AddWithValue("@norm",  normalizedUserName);
+                cmd.Parameters.AddWithValue("@zalo",  (object?)user.ZaloId ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@notif", (object?)user.NotificationPreference ?? DBNull.Value);
+                await cmd.ExecuteNonQueryAsync();
+                return true;
+            }
+            catch { return false; }
+        }
+
+        public async Task UpdateUserAsync(User user)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            // Khi cập nhật Role → SecurityStamp thay đổi để vô hiệu hóa token cũ
+            string sql = @"
+                UPDATE Users SET 
+                    FullName       = @f, 
+                    Email          = @e, 
+                    PhoneNumber    = @pn, 
+                    Role           = @r, 
+                    DepartmentId   = @d,
+                    SecurityStamp  = @stamp,
+                    NormalizedUserName = upper(Username),
+                    PasswordHash   = CASE WHEN @ph = '' THEN PasswordHash ELSE @ph END,
+                    ZaloId         = @zalo,
+                    NotificationPreference = @notif
+                WHERE Id = @id";
+
+            using var cmd = new SqliteCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@f",     (object?)user.FullName ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@e",     (object?)user.Email ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@pn",    (object?)user.PhoneNumber ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@r",     (object?)user.Role ?? "Guest");
+            cmd.Parameters.AddWithValue("@d",     (object?)user.DepartmentId ?? DBNull.Value);
+            // Sử dụng SecurityStamp từ object để đồng bộ với Identity (tránh lỗi desync)
+            cmd.Parameters.AddWithValue("@stamp", string.IsNullOrEmpty(user.SecurityStamp) ? Guid.NewGuid().ToString() : user.SecurityStamp);
+            cmd.Parameters.AddWithValue("@ph",    user.PasswordHash ?? "");
+            cmd.Parameters.AddWithValue("@zalo",  (object?)user.ZaloId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@notif", (object?)user.NotificationPreference ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@id",    user.Id);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task DeleteUserAsync(int id)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            using var cmd = new SqliteCommand("DELETE FROM Users WHERE Id=@id", connection);
+            cmd.Parameters.AddWithValue("@id", id);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task<bool> RegisterAsync(string username, string password, string role = "Guest")
+        {
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
+            return await CreateUserAsync(new User { Username = username, PasswordHash = hashedPassword, Role = role });
+        }
+
+        public async Task<bool> UpdateUserPasswordAsync(int userId, string newPassword)
+        {
+            try
+            {
+                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 12);
+                using var connection = new SqliteConnection(_connectionString);
+                await connection.OpenAsync();
+                // Khi đổi mật khẩu → bắt buộc cập nhật SecurityStamp để vô hiệu hóa tất cả token cũ
+                using var cmd = new SqliteCommand(@"
+                    UPDATE Users 
+                    SET PasswordHash  = @p,
+                        SecurityStamp = @stamp
+                    WHERE Id = @id", connection);
+                cmd.Parameters.AddWithValue("@p",     hashedPassword);
+                cmd.Parameters.AddWithValue("@stamp", Guid.NewGuid().ToString());
+                cmd.Parameters.AddWithValue("@id",    userId);
+                return cmd.ExecuteNonQuery() > 0;
+            }
+            catch { return false; }
+        }
+
+        // ─── ASP.NET CORE IDENTITY SUPPORT METHODS ───────────────────────────────
+
+        /// <summary>Cập nhật SecurityStamp — được gọi khi đổi mật khẩu, đổi role, hoặc bị kick</summary>
+        public async Task UpdateSecurityStampAsync(int userId, string securityStamp)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            using var cmd = new SqliteCommand(
+                "UPDATE Users SET SecurityStamp = @stamp WHERE Id = @id", connection);
+            cmd.Parameters.AddWithValue("@stamp", securityStamp);
+            cmd.Parameters.AddWithValue("@id",    userId);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>Cập nhật AccessFailedCount và LockoutEnd (Identity format, đồng bộ với cột cũ)</summary>
+        public async Task UpdateLockoutAsync(int userId, int accessFailedCount, DateTimeOffset? lockoutEnd)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            using var cmd = new SqliteCommand(@"
+                UPDATE Users SET
+                    AccessFailedCount = @count,
+                    FailedLoginCount  = @count,
+                    LockoutEnd        = @lockoutEnd,
+                    LockoutUntil      = @lockoutUntil
+                WHERE Id = @id", connection);
+            cmd.Parameters.AddWithValue("@count",       accessFailedCount);
+            cmd.Parameters.AddWithValue("@lockoutEnd",  (object?)lockoutEnd?.ToString("O") ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@lockoutUntil",(object?)lockoutEnd?.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss") ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@id",          userId);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>Reset bộ đếm sai sau khi đăng nhập thành công</summary>
+        public async Task ResetAccessFailedCountAsync(int userId)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            using var cmd = new SqliteCommand(@"
+                UPDATE Users 
+                SET AccessFailedCount = 0, LockoutEnd = NULL, FailedLoginCount = 0, LockoutUntil = NULL 
+                WHERE Id = @id", connection);
+            cmd.Parameters.AddWithValue("@id", userId);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task UpdateRefreshTokenAsync(int userId, string? refreshToken, DateTime? expiryTime)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync();
+            using var cmd = new SqliteCommand(@"
+                UPDATE Users 
+                SET RefreshToken = @rt, RefreshTokenExpiryTime = @exp 
+                WHERE Id = @id", connection);
+            
+            cmd.Parameters.AddWithValue("@rt", string.IsNullOrEmpty(refreshToken) ? (object)DBNull.Value : refreshToken);
+            cmd.Parameters.AddWithValue("@exp", expiryTime.HasValue ? expiryTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@id", userId);
+            
+            await cmd.ExecuteNonQueryAsync();
+        }
+    }
+}

@@ -1,0 +1,27 @@
+version: "3.3"
+services:
+  lichcongtac-hlhpn-backend:
+    image: ghcr.io/nguyenanhduchl/lichcongtac-hlhpn:latest
+    container_name: lichcongtac-hlhpn-backend
+    expose:
+      - "5000"
+    ports:
+      - "59609:5000"
+    mem_limit: 512m
+    cpus: "1.0"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - DB_PATH=${DB_PATH}
+      - TZ=${TZ}
+      - JWT_SECRET=${JWT_SECRET}
+      - PUBLIC_ID_SECRET=${PUBLIC_ID_SECRET}
+    volumes:
+      - ./data_dump:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: always
