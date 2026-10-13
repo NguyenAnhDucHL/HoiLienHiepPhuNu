@@ -1,3 +1,19 @@
+### [2026-10-13 23:52] Cấu hình chạy tên miền riêng lienhiepphunu.vpdtcampha.vn tại root /
+- **Mô tả**: Thiết lập ứng dụng chạy độc lập trên tên miền mới `lienhiepphunu.vpdtcampha.vn` (DNS trỏ về 14.225.172.225). Chuyển Vite base path và React Router về root `/` (hỗ trợ song song cả `/` và `/phunu/`), cập nhật meta SEO/canonical, cập nhật đường dẫn điều hướng Navbar và cấu hình Nginx riêng `lienhiepphunu.conf` với chứng chỉ SSL wildcard.
+- **Tệp thay đổi**:
+  - `LichCongTac.Api/Program.cs` (Sửa đổi — bỏ UsePathBase bắt buộc)
+  - `LichCongTac.Api/ClientApp/vite.config.js` (Sửa đổi — đổi base về /)
+  - `LichCongTac.Api/ClientApp/index.html` (Sửa đổi — đổi canonical/og sang lienhiepphunu.vpdtcampha.vn)
+  - `LichCongTac.Api/ClientApp/src/main.jsx` (Sửa đổi — hỗ trợ routing cả root / và /phunu/)
+  - `LichCongTac.Api/ClientApp/src/shared/components/PublicLayout.jsx` (Sửa đổi — đổi link nav sang root)
+  - `LichCongTac.Api/ClientApp/src/components/AdminHeader.jsx` (Sửa đổi — đổi link nav sang root)
+  - `LichCongTac.Api/ClientApp/src/pages/AdminLogin.jsx` (Sửa đổi — đổi link quay về và điều hướng sang root)
+  - `LichCongTac.Api/ClientApp/src/pages/AdminChangePassword.jsx` (Sửa đổi — đổi link login)
+  - `LichCongTac.Api/ClientApp/src/contexts/AuthContext.jsx` (Sửa đổi — hỗ trợ check /manager)
+  - `LichCongTac.Api/ClientApp/src/pages/WorkSchedule.jsx` (Sửa đổi — đổi activeHref sang /)
+  - `LichCongTac.Api/ClientApp/src/pages/SearchSchedule.jsx` (Sửa đổi — đổi activeHref sang /search)
+- **Lệnh git commit**: `git commit -m "feat(infra): cấu hình chạy tên miền riêng lienhiepphunu.vpdtcampha.vn tại root"`
+
 ### [2026-10-13 23:32] Cập nhật cấu hình CI/CD GitHub Actions và màu navbar Admin cho Hội Liên Hiệp Phụ Nữ
 - **Mô tả**: Đồng bộ cấu hình triển khai tự động CI/CD cho dự án Hội Liên Hiệp Phụ Nữ: sửa Docker image tag thành `ghcr.io/nguyenanhduchl/lichcongtac-hlhpn:latest` và thư mục triển khai máy chủ thành `/root/lichcongtac-hlhpn` để tránh xung đột với bản UBND đang chạy trên cùng server. Cập nhật màu nền thanh menu AdminHeader sang tím `#7b1fa2`.
 - **Tệp thay đổi**:

@@ -17,18 +17,26 @@ export default function AdminHeader() {
     const toastId = toast.loading('Đang đăng xuất...')
     setTimeout(() => {
       logout()
-      navigate('/phunu/manager/login')
+      navigate('/manager/login')
       toast.success('Hẹn gặp lại!', { id: toastId })
     }, 1000)
   }
 
   const isActive = (href) => {
     if (!href || href === '#' || href === null) return false
-    return currentPath === href || currentPath === href + '/'
+    return (
+      currentPath === href ||
+      currentPath === href + '/' ||
+      currentPath === `/phunu${href}` ||
+      currentPath === `/phunu${href}/`
+    )
   }
 
   const isAdminActive = () => {
     return [
+      '/manager/accounts',
+      '/manager/departments',
+      '/manager/employees',
       '/phunu/manager/accounts',
       '/phunu/manager/departments',
       '/phunu/manager/employees',
@@ -39,16 +47,16 @@ export default function AdminHeader() {
     {
       label: 'QUẢN TRỊ',
       subItems: [
-        { label: 'Quản trị tài khoản', href: '/phunu/manager/accounts' },
-        { label: 'Quản trị phòng ban', href: '/phunu/manager/departments' },
-        { label: 'Quản trị nhân viên', href: '/phunu/manager/employees' },
+        { label: 'Quản trị tài khoản', href: '/manager/accounts' },
+        { label: 'Quản trị phòng ban', href: '/manager/departments' },
+        { label: 'Quản trị nhân viên', href: '/manager/employees' },
       ],
     },
-    { label: 'LỊCH CÔNG TÁC', href: '/phunu/' },
-    { label: 'QUẢN TRỊ LỊCH', href: '/phunu/manager/schedules' },
-    { label: 'THÔNG BÁO', href: '/phunu/manager/notifications' },
-    { label: 'NGÀY LỄ', href: '/phunu/manager/holidays' },
-    { label: 'ĐỔI MẬT KHẨU', href: '/phunu/manager/change-password' },
+    { label: 'LỊCH CÔNG TÁC', href: '/' },
+    { label: 'QUẢN TRỊ LỊCH', href: '/manager/schedules' },
+    { label: 'THÔNG BÁO', href: '/manager/notifications' },
+    { label: 'NGÀY LỄ', href: '/manager/holidays' },
+    { label: 'ĐỔI MẬT KHẨU', href: '/manager/change-password' },
     { label: 'ĐĂNG XUẤT', href: null, onClick: handleLogout },
   ]
 

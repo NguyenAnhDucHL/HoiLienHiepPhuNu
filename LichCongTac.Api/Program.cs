@@ -273,7 +273,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UsePathBase("/phunu");
+// Standalone subdomain: lienhiepphunu.vpdtcampha.vn (chạy tại root /)
 
 app.Use(async (context, next) =>
 {

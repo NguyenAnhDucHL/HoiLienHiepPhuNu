@@ -110,7 +110,7 @@ function RequireAuth({ children }) {
   const { token, loading } = useAuth()
   if (loading) return null
   if (!token) {
-    return <Navigate to="/phunu/manager/login" replace />
+    return <Navigate to="/manager/login" replace />
   }
   return children
 }
@@ -119,15 +119,97 @@ function RequireAdmin({ children }) {
   const { token, user, loading } = useAuth()
   if (loading) return null
   if (!token) {
-    return <Navigate to="/phunu/manager/login" replace />
+    return <Navigate to="/manager/login" replace />
   }
   if (user?.role !== 'Admin') {
-    return <Navigate to="/phunu/manager/change-password" replace />
+    return <Navigate to="/manager/change-password" replace />
   }
   return children
 }
 
+const adminChildren = [
+  {
+    path: 'change-password',
+    element: <AdminChangePassword />,
+  },
+  {
+    path: 'schedules',
+    element: (
+      <RequireAdmin>
+        <AdminSchedules />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: 'accounts',
+    element: (
+      <RequireAdmin>
+        <AdminAccounts />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: 'departments',
+    element: (
+      <RequireAdmin>
+        <AdminDepartments />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: 'employees',
+    element: (
+      <RequireAdmin>
+        <AdminEmployees />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: 'notifications',
+    element: (
+      <RequireAdmin>
+        <AdminNotifications />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: 'holidays',
+    element: (
+      <RequireAdmin>
+        <AdminHolidays />
+      </RequireAdmin>
+    ),
+  },
+  {
+    path: '*',
+    element: <Navigate to="/manager/schedules" replace />,
+  },
+]
+
 const router = createBrowserRouter([
+  // Primary routes at root (lienhiepphunu.vpdtcampha.vn)
+  {
+    path: '/',
+    element: <WorkSchedule />,
+  },
+  {
+    path: '/search',
+    element: <SearchSchedule />,
+  },
+  {
+    path: '/manager/login',
+    element: <AdminLogin />,
+  },
+  {
+    path: '/manager',
+    element: (
+      <RequireAuth>
+        <Outlet />
+      </RequireAuth>
+    ),
+    children: adminChildren,
+  },
+  // Backward compatibility alias for /phunu/
   {
     path: '/phunu/',
     element: <WorkSchedule />,
@@ -147,68 +229,11 @@ const router = createBrowserRouter([
         <Outlet />
       </RequireAuth>
     ),
-    children: [
-      {
-        path: 'change-password',
-        element: <AdminChangePassword />,
-      },
-      {
-        path: 'schedules',
-        element: (
-          <RequireAdmin>
-            <AdminSchedules />
-          </RequireAdmin>
-        ),
-      },
-      {
-        path: 'accounts',
-        element: (
-          <RequireAdmin>
-            <AdminAccounts />
-          </RequireAdmin>
-        ),
-      },
-      {
-        path: 'departments',
-        element: (
-          <RequireAdmin>
-            <AdminDepartments />
-          </RequireAdmin>
-        ),
-      },
-      {
-        path: 'employees',
-        element: (
-          <RequireAdmin>
-            <AdminEmployees />
-          </RequireAdmin>
-        ),
-      },
-      {
-        path: 'notifications',
-        element: (
-          <RequireAdmin>
-            <AdminNotifications />
-          </RequireAdmin>
-        ),
-      },
-      {
-        path: 'holidays',
-        element: (
-          <RequireAdmin>
-            <AdminHolidays />
-          </RequireAdmin>
-        ),
-      },
-      {
-        path: '*',
-        element: <Navigate to="/phunu/manager/schedules" replace />,
-      },
-    ],
+    children: adminChildren,
   },
   {
     path: '*',
-    element: <Navigate to="/phunu/" replace />,
+    element: <Navigate to="/" replace />,
   },
 ])
 

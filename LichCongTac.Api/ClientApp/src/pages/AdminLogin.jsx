@@ -30,7 +30,7 @@ export default function AdminLogin() {
   }, [searchParams, setSearchParams])
 
   if (authLoading) return null
-  if (token) return <Navigate to="/phunu/manager/schedules" replace />
+  if (token) return <Navigate to="/manager/schedules" replace />
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -54,7 +54,7 @@ export default function AdminLogin() {
 
       if (resToken) {
         login({ name: resUserName, role: resRole }, resToken, resRefreshToken)
-        navigate('/phunu/manager/schedules', { replace: true })
+        navigate('/manager/schedules', { replace: true })
       } else {
         setError('Đăng nhập thành công nhưng không lấy được token.')
       }
@@ -131,7 +131,7 @@ export default function AdminLogin() {
 
           <div className="text-center pt-2">
             <Link
-              to="/phunu/"
+              to="/"
               className="inline-flex items-center justify-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
             >
               <ArrowLeft size={16} />

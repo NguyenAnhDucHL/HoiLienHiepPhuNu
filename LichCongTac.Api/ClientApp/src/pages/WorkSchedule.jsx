@@ -337,7 +337,7 @@ export default function WorkSchedule() {
   const upcoming = scheduleData.filter((d) => !d.isToday)
 
   return (
-    <PublicLayout activeHref="/phunu/" todayHoliday={todayHoliday}>
+    <PublicLayout activeHref="/" todayHoliday={todayHoliday}>
       <main className="max-w-6xl mx-auto pt-0 pb-6">
         {loading ? (
           <div className="flex justify-center py-20 text-[#7b1fa2]">

@@ -113,7 +113,7 @@ export default function SearchSchedule() {
     }, [])
 
   return (
-    <PublicLayout activeHref="/phunu/search" todayHoliday={todayHoliday}>
+    <PublicLayout activeHref="/search" todayHoliday={todayHoliday}>
       <main className="max-w-6xl mx-auto px-4 py-6 text-[16px]">
         {/* Search box */}
         <div className="bg-[#e8f0f7] border border-[#c0d4e8] p-4 md:p-6 mb-6">

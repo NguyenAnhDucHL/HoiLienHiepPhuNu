@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Menu } from 'lucide-react'
 
 const PUBLIC_NAV = [
-  { label: 'TRANG CHỦ', href: '/phunu/' },
+  { label: 'TRANG CHỦ', href: '/' },
   {
     label: 'QUẢN LÝ VĂN BẢN ĐIỀU HÀNH',
     href: 'https://congchuc.quangninh.gov.vn/sso/Login.aspx',
@@ -19,8 +19,8 @@ const PUBLIC_NAV = [
     href: 'https://mail.quangninh.gov.vn/owa/auth/logon.aspx?replaceCurrent=1&url=https%3a%2f%2fmail.quangninh.gov.vn%2fowa%2f',
     target: '_blank',
   },
-  { label: 'TÌM KIẾM', href: '/phunu/search' },
-  { label: 'QUẢN TRỊ', href: '/phunu/manager/login' },
+  { label: 'TÌM KIẾM', href: '/search' },
+  { label: 'QUẢN TRỊ', href: '/manager/login' },
 ]
 
 export function PublicLayout({ children, activeHref, todayHoliday }) {

@@ -24,7 +24,7 @@ export default function AdminChangePassword() {
     localStorage.removeItem('user_name')
     localStorage.removeItem('user_role')
     logout()
-    navigate('/phunu/manager/login', { replace: true })
+    navigate('/manager/login', { replace: true })
   }
 
   const handleSubmit = async (e) => {

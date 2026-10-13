@@ -11,7 +11,7 @@ const __dirname = dirname(__filename)
 const backendTarget = process.env.VITE_BACKEND_URL || 'http://localhost:59608'
 
 export default defineConfig({
-  base: '/phunu/',
+  base: '/',
   publicDir: 'public',
   plugins: [
     tailwindcss(),
