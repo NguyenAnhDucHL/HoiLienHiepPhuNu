@@ -1,3 +1,12 @@
+### [2026-10-14 08:20] Xử lý lỗi hết hạn phiên đăng nhập và xóa tài khoản thừa
+- **Mô tả**: Sửa triệt để thông báo lỗi "Lỗi hệ thống" mơ hồ khi token hết hạn hoặc tài khoản bị đăng nhập ở thiết bị khác; cập nhật fallback 401 sang "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" trong `apiClient.js` và bổ sung nút điều hướng đăng nhập lại trên `AdminSchedules.jsx`; đồng bộ màu tím thương hiệu cho modal hết hạn phiên trong `AuthContext.jsx`. Xác nhận database chỉ còn tài khoản quản trị viên duy nhất `admin` (đã xóa triệt để `Nguyễn Anh Đức`, `Hoàng Thị Nhu`, `Quản trị Test`).
+- **Tệp thay đổi**:
+  - `LichCongTac.Api/ClientApp/src/lib/apiClient.js` (Sửa đổi — thông báo 401/403 chính xác, bắt lỗi refresh token)
+  - `LichCongTac.Api/ClientApp/src/pages/AdminSchedules.jsx` (Sửa đổi — thêm nút Đăng nhập lại khi lỗi phiên)
+  - `LichCongTac.Api/ClientApp/src/contexts/AuthContext.jsx` (Sửa đổi — đồng bộ màu tím thương hiệu cho modal)
+  - `COMMIT_LOG.md` (Sửa đổi)
+- **Lệnh git commit**: `git commit -m "fix(auth): xử lý lỗi hết hạn phiên đăng nhập và xóa tài khoản thừa"`
+
 ### [2026-10-14 08:05] Cập nhật và khởi tạo các tài khoản đăng nhập quản trị
 - **Mô tả**: Thiết lập mật khẩu chuẩn `CamPha@2026!` cho tài khoản Quản trị viên `admin`, đồng thời khởi tạo/cập nhật tài khoản Lãnh đạo `hoangthinhu` (Chủ tịch Hội LHPN) và Cán bộ chuyên trách `canbo`. Đã test xác thực trực tiếp qua API JWT Bearer token và kiểm tra trạng thái lockout.
 - **Tệp thay đổi**:

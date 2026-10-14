@@ -100,10 +100,16 @@ async function parseResponse(response, url) {
   if (!response.ok) {
     const errorData = await readJsonSafe(response)
     const isAuthEndpoint = url.includes('/api/auth/')
-    const fallback =
-      response.status === 401 && isAuthEndpoint
+    let fallback = response.statusText || 'Lỗi hệ thống'
+    if (response.status === 401) {
+      fallback = isAuthEndpoint
         ? 'Sai tài khoản hoặc mật khẩu'
-        : response.statusText || 'Lỗi hệ thống'
+        : 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.'
+    } else if (response.status === 403) {
+      fallback = 'Bạn không có quyền thực hiện thao tác này.'
+    } else if (response.status >= 500) {
+      fallback = 'Máy chủ đang bận hoặc gặp sự cố. Vui lòng thử lại sau.'
+    }
     const error = new Error(errorData.message || errorData.error || fallback)
     error.status = response.status
     throw error
@@ -119,7 +125,7 @@ async function parseResponse(response, url) {
         return json.data !== null ? json.data : { message: json.message }
       }
       // Backend trả 200 OK nhưng success = false (một số logic cũ)
-      throw new Error(json.message || 'Lỗi hệ thống')
+      throw new Error(json.message || 'Lỗi xử lý yêu cầu.')
     }
     return json
   }
@@ -133,8 +139,16 @@ export async function apiClient(url, options = {}) {
 
   // 401 trên API thường (không phải /api/auth/*): thử gia hạn token rồi gọi lại đúng 1 lần
   if (response.status === 401 && !url.includes('/api/auth/')) {
-    await refreshAccessToken()
-    response = await send(url, options)
+    try {
+      await refreshAccessToken()
+      response = await send(url, options)
+    } catch {
+      notifyUnauthorized('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
+    }
+  }
+
+  if (response.status === 401 && !url.includes('/api/auth/')) {
+    notifyUnauthorized('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
   }
 
   return parseResponse(response, url)

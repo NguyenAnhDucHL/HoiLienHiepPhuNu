@@ -277,13 +277,24 @@ export default function AdminSchedules() {
             className="mb-3 flex items-center justify-between gap-3 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
           >
             <span>Không tải được danh sách lịch: {loadError}</span>
-            <button
-              type="button"
-              onClick={() => fetchSchedules(currentPage, keyword, pageSize)}
-              className="shrink-0 rounded border border-red-400 bg-white px-3 py-1 font-medium text-red-700 hover:bg-red-100"
-            >
-              Tải lại
-            </button>
+            <div className="flex items-center gap-2">
+              {loadError.toLowerCase().includes('hết hạn') || loadError.toLowerCase().includes('đăng nhập') ? (
+                <a
+                  href="/manager/login"
+                  className="shrink-0 rounded bg-[#7b1fa2] px-3 py-1 font-medium text-white hover:bg-[#6a1391]"
+                >
+                  Đăng nhập lại
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fetchSchedules(currentPage, keyword, pageSize)}
+                  className="shrink-0 rounded border border-red-400 bg-white px-3 py-1 font-medium text-red-700 hover:bg-red-100"
+                >
+                  Tải lại
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <>
