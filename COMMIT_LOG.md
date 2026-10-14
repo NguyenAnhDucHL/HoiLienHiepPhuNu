@@ -1,3 +1,9 @@
+### [2026-10-14 08:35] Khắc phục lỗi 429 Too Many Requests từ Nginx gateway
+- **Mô tả**: Gỡ bỏ giới hạn rate limit quá gắt (`limit_req zone=global burst=20 nodelay`, `rate=60r/m`) tại cấp độ server Nginx trong `/root/vp-gateway/nginx/conf.d/lienhiepphunu.conf`. Trình duyệt khi tải SPA hoặc bấm F5 tải hàng chục asset song song vượt ngưỡng burst 20 gây ra lỗi 429; các giới hạn bảo mật chống brute-force vẫn được quản lý an toàn ở tầng backend (5 req/phút/IP trên auth). Đã reload Nginx và kiểm tra 15 request liên tục thành công 200 OK.
+- **Tệp thay đổi**:
+  - `COMMIT_LOG.md` (Sửa đổi)
+- **Lệnh git commit**: `git commit -m "fix(infra): tắt rate-limit tĩnh trên Nginx gateway chống 429 cho SPA"`
+
 ### [2026-10-14 08:27] Xử lý lỗi tải chunk khi deploy (Failed to fetch dynamically imported module)
 - **Mô tả**: Bổ sung cơ chế tự phục hồi `lazyWithRetry` và bắt sự kiện `vite:preloadError` trong `main.jsx` khi trình duyệt gặp lỗi tải chunk do phiên bản mới được deploy; tích hợp component `RouteErrorFallback` cho `errorElement` trong toàn bộ router thay vì để lộ màn hình lỗi lập trình của React Router.
 - **Tệp thay đổi**:
