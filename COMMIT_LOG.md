@@ -1,3 +1,11 @@
+### [2026-10-14 07:52] Cải thiện giao diện trang Đăng nhập Quản trị: chống loá, tăng độ tương phản và dễ đọc text
+- **Mô tả**: Sửa triệt để tình trạng chói loá và khó đọc chữ trên trang đăng nhập: thay thế nền sọc chéo tím/hồng chói mắt bằng nền gradient xám/tím pastel siêu nhẹ dịu mắt; thay hộp đăng nhập màu tím tối thui bằng thẻ Card trắng tinh tế (`bg-white rounded-2xl shadow`), các ô nhập liệu nền trắng viền xám tiêu chuẩn với chữ gõ màu đen đậm (`text-gray-900`) tương phản cao, xử lý autofill trình duyệt không bị lệch màu. Đồng bộ màu tím thương hiệu `#7b1fa2` cho nút bấm và các thành phần quản trị trong `AdminChangePassword.jsx`.
+- **Tệp thay đổi**:
+  - `LichCongTac.Api/ClientApp/src/pages/AdminLogin.jsx` (Sửa đổi — thiết kế lại giao diện thẻ trắng tinh tế, chữ dễ đọc, dịu mắt)
+  - `LichCongTac.Api/ClientApp/src/pages/AdminChangePassword.jsx` (Sửa đổi — đồng bộ màu tím thương hiệu)
+  - `COMMIT_LOG.md` (Sửa đổi)
+- **Lệnh git commit**: `git commit -m "fix(ui): cải thiện giao diện trang login quản trị chống loá và tăng độ tương phản"`
+
 ### [2026-10-13 23:59] Xóa dữ liệu mẫu cũ (Schedules, Departments, Holidays, Notifications) của HLHPN
 - **Mô tả**: Đã tạo bản sao lưu DB trước khi xử lý (`documents.db.bak_...`). Xóa toàn bộ 398 lịch công tác cũ, phòng ban, thông báo và ngày lễ thừa từ bản clone UBND trên database độc lập của Hội Liên Hiệp Phụ Nữ (`/root/lichcongtac-hlhpn/data_dump/documents.db`), reset sequence về 1 và VACUUM. Giữ nguyên tài khoản quản trị Admin.
 - **Tệp thay đổi**:

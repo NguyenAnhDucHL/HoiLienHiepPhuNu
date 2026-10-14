@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Eye, EyeOff, ArrowLeft, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavigate, useSearchParams, Navigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext.jsx'
@@ -66,75 +66,88 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center font-sans">
-      {/* Background shape */}
-      <div className="absolute inset-0 z-0 bg-white">
-        <div
-          className="absolute top-0 left-0 w-full h-full"
-          style={{
-            background:
-              'linear-gradient(105deg, #ce93d8 0%, #ce93d8 60%, #f8bbd0 60%, #f8bbd0 70%, #fce4ec 70%, #fce4ec 100%)',
-          }}
-        />
-      </div>
+    <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center font-sans bg-gradient-to-br from-slate-100 via-[#f8f5fb] to-[#fce4ec] p-4">
+      {/* Subtle decorative background glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-200/40 rounded-full blur-3xl pointer-events-none" />
 
       {/* Login Box */}
-      <div className="relative z-10 w-full max-w-[420px] bg-[#9c27b0] shadow-[15px_15px_20px_rgba(0,0,0,0.1)] p-12 -mt-10">
-        <h2 className="text-3xl font-bold text-white text-center mb-12 tracking-wide">
-          Quản trị
-        </h2>
+      <div className="relative z-10 w-full max-w-[420px] bg-white rounded-2xl shadow-[0_15px_40px_rgba(123,31,162,0.1)] border border-purple-100/80 p-8 sm:p-10 -mt-8">
+        {/* Header Icon & Title */}
+        <div className="text-center mb-7">
+          <div className="w-13 h-13 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center mx-auto mb-3 text-[#7b1fa2] shadow-sm">
+            <Lock size={24} className="text-[#7b1fa2]" />
+          </div>
+          <p className="text-[11px] font-bold text-[#7b1fa2] uppercase tracking-wider mb-1">
+            Hội Liên Hiệp Phụ Nữ Phường Cẩm Phả
+          </p>
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Đăng nhập Quản trị
+          </h2>
+          <p className="text-xs text-gray-500 mt-1">
+            Nhập tài khoản để truy cập hệ thống quản lý
+          </p>
+        </div>
 
         {error && (
-          <div className="text-white text-sm mb-4 text-center bg-red-500/50 p-2 rounded">
+          <div className="text-red-700 text-sm mb-5 text-center bg-red-50 border border-red-200 p-3 rounded-lg font-medium">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-8">
-          <div className="relative">
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+              Tên đăng nhập
+            </label>
             <input
               type="text"
-              placeholder="Tên đăng nhập"
-              className="w-full bg-transparent border border-[#ce93d8] rounded-md text-gray-800 placeholder:text-gray-500 py-2 px-3 outline-none focus:border-white transition-colors"
+              placeholder="Nhập tên đăng nhập"
+              className="w-full bg-white border border-gray-300 focus:border-[#7b1fa2] focus:ring-4 focus:ring-[#7b1fa2]/15 rounded-xl text-gray-900 placeholder:text-gray-400 py-2.5 px-3.5 text-sm font-medium outline-none transition-all shadow-sm"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Mật khẩu"
-              className="w-full bg-transparent border border-[#ce93d8] rounded-md text-gray-800 placeholder:text-gray-500 py-2 pl-3 pr-10 outline-none focus:border-white transition-colors"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-2.5 text-[#ce93d8] hover:text-white transition-colors"
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+              Mật khẩu
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Nhập mật khẩu"
+                className="w-full bg-white border border-gray-300 focus:border-[#7b1fa2] focus:ring-4 focus:ring-[#7b1fa2]/15 rounded-xl text-gray-900 placeholder:text-gray-400 py-2.5 pl-3.5 pr-10 text-sm font-medium outline-none transition-all shadow-sm"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-400 hover:text-[#7b1fa2] transition-colors focus:outline-none"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
-          <div className="pt-6">
+          <div className="pt-2">
             <button
               type="submit"
               disabled={loading}
-              className="w-[140px] mx-auto block bg-[#5cb85c] hover:bg-[#4cae4c] text-white py-2.5 rounded text-sm transition-colors shadow-md disabled:opacity-50"
+              className="w-full bg-[#7b1fa2] hover:bg-[#6a1391] text-white py-2.5 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg active:scale-[0.99] disabled:opacity-50 cursor-pointer"
             >
-              {loading ? 'Đang tải...' : 'Đăng nhập'}
+              {loading ? 'Đang xác thực...' : 'Đăng nhập'}
             </button>
           </div>
 
           <div className="text-center pt-2">
             <Link
               to="/"
-              className="inline-flex items-center justify-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-[#7b1fa2] transition-colors"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={14} />
               Quay về xem Lịch công tác
             </Link>
           </div>
@@ -143,7 +156,7 @@ export default function AdminLogin() {
 
       {/* Footer */}
       <div className="absolute bottom-0 w-full z-20">
-        <footer className="bg-[#9c27b0] text-white text-center py-2 text-xs">
+        <footer className="bg-[#7b1fa2] text-white text-center py-2.5 text-xs font-medium shadow-inner">
           Bản quyền thuộc về Hội Liên Hiệp Phụ Nữ phường Cẩm Phả
         </footer>
       </div>

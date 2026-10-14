@@ -59,7 +59,7 @@ export default function AdminChangePassword() {
   const borderClass = {
     match: 'border-green-300 focus:border-green-400 focus:ring-1 focus:ring-green-300/30',
     mismatch: 'border-red-300 focus:border-red-400 focus:ring-1 focus:ring-red-300/30',
-    empty: 'border-gray-300 focus:border-[#5bc0de] focus:ring-1 focus:ring-[#5bc0de]/30',
+    empty: 'border-gray-300 focus:border-[#7b1fa2] focus:ring-1 focus:ring-[#7b1fa2]/30',
   }[confirmMatchState]
 
   return (
@@ -69,7 +69,7 @@ export default function AdminChangePassword() {
         <div className="max-w-md mx-auto">
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="bg-[#5bc0de] px-6 py-4 flex items-center gap-3">
+            <div className="bg-[#7b1fa2] px-6 py-4 flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
                 <KeyRound size={18} className="text-white" />
               </div>
@@ -180,7 +180,7 @@ export default function AdminChangePassword() {
                   <button
                     type="submit"
                     disabled={loading || !!successMsg}
-                    className="w-full bg-[#5cb85c] hover:bg-[#4cae4c] disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg text-[15px] font-bold transition-colors shadow-sm flex items-center justify-center gap-2"
+                    className="w-full bg-[#7b1fa2] hover:bg-[#6a1391] disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg text-[15px] font-bold transition-colors shadow-sm flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <>
