@@ -9,15 +9,39 @@ import { AlertTriangle, RefreshCw } from 'lucide-react'
 import WorkSchedule from './pages/WorkSchedule.jsx'
 import SearchSchedule from './pages/SearchSchedule.jsx'
 
-// Trang Admin — lazy load (chỉ tải khi cần, giảm initial bundle ~60%)
-const AdminLogin = lazy(() => import('./pages/AdminLogin.jsx'))
-const AdminAccounts = lazy(() => import('./pages/AdminAccounts.jsx'))
-const AdminSchedules = lazy(() => import('./pages/AdminSchedules.jsx'))
-const AdminChangePassword = lazy(() => import('./pages/AdminChangePassword.jsx'))
-const AdminDepartments = lazy(() => import('./pages/AdminDepartments.jsx'))
-const AdminEmployees = lazy(() => import('./pages/AdminEmployees.jsx'))
-const AdminNotifications = lazy(() => import('./pages/AdminNotifications.jsx'))
-const AdminHolidays = lazy(() => import('./pages/AdminHolidays.jsx'))
+// Tự động reload khi Vite gặp lỗi preload chunk do hệ thống vừa deploy phiên bản mới
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault()
+  window.location.reload()
+})
+
+// Wrapper tự động reload 1 lần khi fetch chunk thất bại do deploy phiên bản mới
+const lazyWithRetry = (importFn) =>
+  lazy(async () => {
+    const isRetried = sessionStorage.getItem('chunk_retry_' + window.location.pathname)
+    try {
+      const module = await importFn()
+      sessionStorage.removeItem('chunk_retry_' + window.location.pathname)
+      return module
+    } catch (error) {
+      if (!isRetried) {
+        sessionStorage.setItem('chunk_retry_' + window.location.pathname, 'true')
+        window.location.reload()
+        return { default: () => null }
+      }
+      throw error
+    }
+  })
+
+// Trang Admin — lazy load có retry bảo vệ khi deploy code mới
+const AdminLogin = lazyWithRetry(() => import('./pages/AdminLogin.jsx'))
+const AdminAccounts = lazyWithRetry(() => import('./pages/AdminAccounts.jsx'))
+const AdminSchedules = lazyWithRetry(() => import('./pages/AdminSchedules.jsx'))
+const AdminChangePassword = lazyWithRetry(() => import('./pages/AdminChangePassword.jsx'))
+const AdminDepartments = lazyWithRetry(() => import('./pages/AdminDepartments.jsx'))
+const AdminEmployees = lazyWithRetry(() => import('./pages/AdminEmployees.jsx'))
+const AdminNotifications = lazyWithRetry(() => import('./pages/AdminNotifications.jsx'))
+const AdminHolidays = lazyWithRetry(() => import('./pages/AdminHolidays.jsx'))
 
 import { SignalRProvider } from './contexts/SignalRContext.jsx'
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx'
@@ -186,19 +210,45 @@ const adminChildren = [
   },
 ]
 
+function RouteErrorFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center border border-gray-100">
+        <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 text-[#7b1fa2]">
+          <RefreshCw size={28} className="text-[#7b1fa2]" />
+        </div>
+        <h2 className="text-lg font-bold text-gray-800 mb-2">Đang tải phiên bản mới</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Hệ thống vừa cập nhật dữ liệu mới. Vui lòng bấm tải lại trang để tiếp tục.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-2 mx-auto px-6 py-2.5 bg-[#7b1fa2] hover:bg-[#6a1391] text-white rounded-xl text-sm font-semibold transition shadow-md shadow-purple-500/20"
+        >
+          <RefreshCw size={16} />
+          Tải lại trang ngay
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const router = createBrowserRouter([
   // Primary routes at root (lienhiepphunu.vpdtcampha.vn)
   {
     path: '/',
     element: <WorkSchedule />,
+    errorElement: <RouteErrorFallback />,
   },
   {
     path: '/search',
     element: <SearchSchedule />,
+    errorElement: <RouteErrorFallback />,
   },
   {
     path: '/manager/login',
     element: <AdminLogin />,
+    errorElement: <RouteErrorFallback />,
   },
   {
     path: '/manager',
@@ -207,20 +257,24 @@ const router = createBrowserRouter([
         <Outlet />
       </RequireAuth>
     ),
+    errorElement: <RouteErrorFallback />,
     children: adminChildren,
   },
   // Backward compatibility alias for /phunu/
   {
     path: '/phunu/',
     element: <WorkSchedule />,
+    errorElement: <RouteErrorFallback />,
   },
   {
     path: '/phunu/search',
     element: <SearchSchedule />,
+    errorElement: <RouteErrorFallback />,
   },
   {
     path: '/phunu/manager/login',
     element: <AdminLogin />,
+    errorElement: <RouteErrorFallback />,
   },
   {
     path: '/phunu/manager',
@@ -229,6 +283,7 @@ const router = createBrowserRouter([
         <Outlet />
       </RequireAuth>
     ),
+    errorElement: <RouteErrorFallback />,
     children: adminChildren,
   },
   {

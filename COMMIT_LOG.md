@@ -1,3 +1,10 @@
+### [2026-10-14 08:27] Xử lý lỗi tải chunk khi deploy (Failed to fetch dynamically imported module)
+- **Mô tả**: Bổ sung cơ chế tự phục hồi `lazyWithRetry` và bắt sự kiện `vite:preloadError` trong `main.jsx` khi trình duyệt gặp lỗi tải chunk do phiên bản mới được deploy; tích hợp component `RouteErrorFallback` cho `errorElement` trong toàn bộ router thay vì để lộ màn hình lỗi lập trình của React Router.
+- **Tệp thay đổi**:
+  - `LichCongTac.Api/ClientApp/src/main.jsx` (Sửa đổi — thêm lazyWithRetry, vite:preloadError, RouteErrorFallback)
+  - `COMMIT_LOG.md` (Sửa đổi)
+- **Lệnh git commit**: `git commit -m "fix(router): tự động reload khi chunk thay đổi sau deploy và bắt lỗi import"`
+
 ### [2026-10-14 08:20] Xử lý lỗi hết hạn phiên đăng nhập và xóa tài khoản thừa
 - **Mô tả**: Sửa triệt để thông báo lỗi "Lỗi hệ thống" mơ hồ khi token hết hạn hoặc tài khoản bị đăng nhập ở thiết bị khác; cập nhật fallback 401 sang "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" trong `apiClient.js` và bổ sung nút điều hướng đăng nhập lại trên `AdminSchedules.jsx`; đồng bộ màu tím thương hiệu cho modal hết hạn phiên trong `AuthContext.jsx`. Xác nhận database chỉ còn tài khoản quản trị viên duy nhất `admin` (đã xóa triệt để `Nguyễn Anh Đức`, `Hoàng Thị Nhu`, `Quản trị Test`).
 - **Tệp thay đổi**:
