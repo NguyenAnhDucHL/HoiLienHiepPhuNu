@@ -1,3 +1,9 @@
+### [2026-10-14 08:05] Cập nhật và khởi tạo các tài khoản đăng nhập quản trị
+- **Mô tả**: Thiết lập mật khẩu chuẩn `CamPha@2026!` cho tài khoản Quản trị viên `admin`, đồng thời khởi tạo/cập nhật tài khoản Lãnh đạo `hoangthinhu` (Chủ tịch Hội LHPN) và Cán bộ chuyên trách `canbo`. Đã test xác thực trực tiếp qua API JWT Bearer token và kiểm tra trạng thái lockout.
+- **Tệp thay đổi**:
+  - `COMMIT_LOG.md` (Sửa đổi)
+- **Lệnh git commit**: `git commit -m "chore(auth): cập nhật mật khẩu và danh sách tài khoản quản trị"`
+
 ### [2026-10-14 07:52] Cải thiện giao diện trang Đăng nhập Quản trị: chống loá, tăng độ tương phản và dễ đọc text
 - **Mô tả**: Sửa triệt để tình trạng chói loá và khó đọc chữ trên trang đăng nhập: thay thế nền sọc chéo tím/hồng chói mắt bằng nền gradient xám/tím pastel siêu nhẹ dịu mắt; thay hộp đăng nhập màu tím tối thui bằng thẻ Card trắng tinh tế (`bg-white rounded-2xl shadow`), các ô nhập liệu nền trắng viền xám tiêu chuẩn với chữ gõ màu đen đậm (`text-gray-900`) tương phản cao, xử lý autofill trình duyệt không bị lệch màu. Đồng bộ màu tím thương hiệu `#7b1fa2` cho nút bấm và các thành phần quản trị trong `AdminChangePassword.jsx`.
 - **Tệp thay đổi**:
